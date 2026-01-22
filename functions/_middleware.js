@@ -1,42 +1,19 @@
-export async function onRequest(context) {
-    const authorization = context.request.headers.get('Authorization');
-    
-    // ユーザー名とパスワードを設定
-    const USERNAME = 'admin';
-    const PASSWORD = '1208';
-    
-    if (!authorization) {
-      return new Response('認証が必要です', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Secure Area"',
-        },
-      });
+export default function middleware(request) {
+  const basicAuth = request.headers.get('authorization');
+
+  if (basicAuth) {
+    const authValue = basicAuth.split(' ')[1];
+    const [user, pwd] = Buffer.from(authValue, 'base64').toString().split(':');
+
+    if (user === 'admin' && pwd === '1208') {
+      return;
     }
-    
-    const [scheme, encoded] = authorization.split(' ');
-    
-    if (!encoded || scheme !== 'Basic') {
-      return new Response('認証が必要です', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Secure Area"',
-        },
-      });
-    }
-    
-    const credentials = atob(encoded).split(':');
-    const user = credentials[0];
-    const pass = credentials[1];
-    
-    if (user !== USERNAME || pass !== PASSWORD) {
-      return new Response('認証失敗', {
-        status: 401,
-        headers: {
-          'WWW-Authenticate': 'Basic realm="Secure Area"',
-        },
-      });
-    }
-    
-    return context.next();
   }
+
+  return new Response('認証が必要です', {
+    status: 401,
+    headers: {
+      'WWW-Authenticate': 'Basic realm="Secure Area"',
+    },
+  });
+}
